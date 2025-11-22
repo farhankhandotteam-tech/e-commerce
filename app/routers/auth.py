@@ -1,46 +1,33 @@
-from fastapi import APIRouter, HTTPException, Depends
-from pydantic import BaseModel, EmailStr
+from fastapi import APIRouter, HTTPException, status, Depends
+from fastapi.security import OAuth2PasswordRequestForm
+from models import UserCreate, UserOut
 from db import db
 from utils import hash_password, verify_password, create_access_token
 from bson import ObjectId
-from models import UserCreate
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
-class LoginModel(BaseModel):
-    email: EmailStr
-    password: str
-
-@router.post("/register")
-async def register_user(payload: UserCreate):
-    existing = await db.users.find_one({"email": payload.email})
+@router.post('/register', response_model=UserOut)
+async def register(user: UserCreate):
+    existing = await db.users.find_one({"email": user.email})
     if existing:
         raise HTTPException(status_code=400, detail="Email already registered")
-    user_doc = {
-        "name": payload.name,
-        "email": payload.email,
-        "password": hash_password(payload.password),
-        "role": "user",
-        "created_at": None
-    }
-    res = await db.users.insert_one(user_doc)
-    token = create_access_token({"sub": str(res.inserted_id)})
-    return {"message": "User registered", "token": token}
+    hashed = hash_password(user.password)
+    doc = {"email": user.email, "hashed_password": hashed, "full_name": user.full_name, "is_admin": False}
+    res = await db.users.insert_one(doc)
+    doc['id'] = str(res.inserted_id)
+    return {"id": doc['id'], "email": doc['email'], "full_name": doc['full_name'], "is_admin": doc['is_admin']}
 
-@router.post("/login")
-async def login_user(payload: LoginModel):
-    user = await db.users.find_one({"email": payload.email})
-    if not user:
-        raise HTTPException(status_code=400, detail="Invalid credentials")
-    if not verify_password(payload.password, user.get("password", "")):
-        raise HTTPException(status_code=400, detail="Invalid credentials")
-    token = create_access_token({"sub": str(user["_id"])})
-    return {"message": "Login successful", "token": token}
+@router.post('/token')
+async def token(form_data: OAuth2PasswordRequestForm = Depends()):
+    user = await db.users.find_one({"email": form_data.username})
+    if not user or not verify_password(form_data.password, user.get('hashed_password')):
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Incorrect username or password")
+    user_id = str(user['_id'])
+    access_token = create_access_token(user_id)
+    return {"access_token": access_token, "token_type": "bearer"}
 
-@router.get("/me")
+@router.get('/me', response_model=UserOut)
 async def me(current_user=Depends(lambda: None)):
-    """
-    Placeholder for docs; actual dependency injection handled in main usage.
-    We'll replace via dependency injection in the router include at runtime if desired.
-    """
-    return {"detail": "Use /auth/me with token header via auth dependency configured in your routes"}
+    # client should call /auth/me with Authorization header; default dependency overridden in main router registration
+    return current_user

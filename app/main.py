@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from config_old import settings
+from config import settings
 from db import db, client
 from .routers import auth, products, categories, cart, orders
 
