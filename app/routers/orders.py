@@ -1,9 +1,9 @@
 from fastapi import APIRouter, Depends, HTTPException
-from ..deps import get_current_user, admin_required
-from ..db import db
+from deps import get_current_user, admin_required
+from db import db
 from bson import ObjectId
 from datetime import datetime
-from ..models import OrderCreate
+from models import OrderCreate
 
 router = APIRouter(prefix="/orders", tags=["orders"])
 
