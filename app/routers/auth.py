@@ -1,9 +1,9 @@
 from fastapi import APIRouter, HTTPException, Depends
 from pydantic import BaseModel, EmailStr
-from ..db import db
-from ..utils import hash_password, verify_password, create_access_token
+from db import db
+from utils import hash_password, verify_password, create_access_token
 from bson import ObjectId
-from ..models import UserCreate
+from models import UserCreate
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
