@@ -1,5 +1,5 @@
 from pydantic_settings import BaseSettings
-from app.config import settings
+from .config import settings
 class Settings(BaseSettings):
     MONGO_URI: str = "mongodb+srv://commerce:commerce@cluster0.9sufkgb.mongodb.net/"
     DB_NAME: str = "ecommerce"
