@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException
-from ..deps import get_current_user
-from ..db import db
+from deps import get_current_user
+from db import db
 from bson import ObjectId
 from datetime import datetime
 

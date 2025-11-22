@@ -1,10 +1,10 @@
 from fastapi import APIRouter, HTTPException, Depends
 from typing import List, Optional
 from bson import ObjectId
-from ..db import db
-from ..models import ProductCreate
-from ..deps import get_current_user, admin_required
-from ..utils import oid_str
+from db import db
+from models import ProductCreate
+from deps import get_current_user, admin_required
+from utils import oid_str
 from datetime import datetime
 
 router = APIRouter(prefix="/products", tags=["products"])

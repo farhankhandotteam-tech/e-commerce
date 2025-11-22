@@ -1,8 +1,8 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from .config import settings
-from .db import db, client
+from config import settings
+from db import db, client
 from .routers import auth, products, categories, cart, orders
 
 app = FastAPI(title="Ecom API", version="0.1")

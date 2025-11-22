@@ -1,9 +1,9 @@
 from fastapi import APIRouter, HTTPException, Depends
 from typing import List
 from bson import ObjectId
-from ..db import db
-from ..models import CategoryCreate
-from ..deps import admin_required
+from db import db
+from models import CategoryCreate
+from deps import admin_required
 from datetime import datetime
 
 router = APIRouter(prefix="/categories", tags=["categories"])
