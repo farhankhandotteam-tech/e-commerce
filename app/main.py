@@ -1,37 +1,49 @@
+# app/main.py
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from .config import settings
-from app.db import db, client
-from .routers import auth, products, categories, cart, orders
+import logging
 
-app = FastAPI(title="Ecom API", version="0.1")
+# import routers (each router module should expose `router`)
+from app.routers import users, products, admin, cart, orders
 
-# CORS - change origins for production
+logger = logging.getLogger("uvicorn.error")
+
+app = FastAPI(
+    title="Ecommerce API",
+    description="Simple e-commerce backend (FastAPI + MongoDB). Admin / user roles with JWT auth.",
+    version="1.0.0",
+)
+
+# CORS - allow from anywhere for development; restrict this in production
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=settings.BACKEND_CORS_ORIGINS or ["*"],
+    allow_origins=["*"],  # change to specific origins in production
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
 # include routers
-app.include_router(auth.router)
+app.include_router(users.router)
 app.include_router(products.router)
-app.include_router(categories.router)
+app.include_router(admin.router)
 app.include_router(cart.router)
 app.include_router(orders.router)
 
 
+@app.get("/", tags=["health"])
+async def root():
+    """
+    Health check / root endpoint.
+    """
+    return {"status": "ok", "message": "Ecommerce API up"}
+
+
 @app.on_event("startup")
 async def startup_event():
-    # create any needed indexes (text index for products search example)
-    await db.products.create_index([("title", "text"), ("description", "text")])
-    await db.users.create_index("email", unique=True)
-    print("Startup: DB indexes ensured.")
-
+    logger.info("Starting Ecommerce API...")
 
 @app.on_event("shutdown")
 async def shutdown_event():
-    client.close()
+    logger.info("Shutting down Ecommerce API...")

@@ -1,27 +1,27 @@
-from passlib.context import CryptContext
-from datetime import datetime, timedelta
-import jwt
-from typing import Dict, Any
-from .config import settings
 from bson import ObjectId
 
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
-def hash_password(password: str) -> str:
-    return pwd_context.hash(password)
+class PyObjectId(ObjectId):
+ @classmethod
+ def __get_validators__(cls):
+  yield cls.validate
 
-def verify_password(plain_password: str, hashed_password: str) -> bool:
-    return pwd_context.verify(plain_password, hashed_password)
 
-def create_access_token(data: Dict[str, Any], expires_delta: timedelta = None) -> str:
-    to_encode = data.copy()
-    expire = datetime.utcnow() + (expires_delta or timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES))
-    to_encode.update({"exp": expire})
-    encoded_jwt = jwt.encode(to_encode, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
-    return encoded_jwt
+@classmethod
+def validate(cls, v):
+ if not ObjectId.is_valid(v):
+  raise ValueError('Invalid objectid')
+  return ObjectId(v)
 
-def decode_token(token: str) -> Dict[str, Any]:
-    return jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
 
-def oid_str(oid: ObjectId) -> str:
-    return str(oid)
+
+
+def obj_to_dict(doc: dict) -> dict:
+ if doc is None:
+  return None
+doc = dict(doc)
+_id = doc.get('_id')
+if _id is not None:
+ doc['id'] = str(_id)
+del doc['_id']
+return doc

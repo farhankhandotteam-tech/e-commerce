@@ -1,78 +1,54 @@
+# app/routers/orders.py
 from fastapi import APIRouter, Depends, HTTPException
-from deps import get_current_user, admin_required
-from db import db
 from bson import ObjectId
-from datetime import datetime
-from models import OrderCreate
+from app.db import orders_collection, cart_collection, products_collection
+from app.auth import get_current_user
+from app.utils import obj_to_dict
 
-router = APIRouter(prefix="/orders", tags=["orders"])
+router = APIRouter(prefix="/orders", tags=["Orders"])
 
-@router.post("/", dependencies=[Depends(get_current_user)])
-async def place_order(payload: OrderCreate, current_user=Depends(get_current_user)):
-    # If items not provided, use cart
-    items = []
-    if payload.items:
-        items = [item.dict() for item in payload.items]
-    else:
-        cart = await db.carts.find_one({"user_id": current_user["_id"]})
-        if not cart or not cart.get("items"):
-            raise HTTPException(400, "Cart is empty")
-        # convert cart items to order items
-        for it in cart["items"]:
-            prod = await db.products.find_one({"_id": ObjectId(it["product_id"])})
-            if not prod:
-                raise HTTPException(400, f"Product {it['product_id']} not found")
-            items.append({"product_id": it["product_id"], "qty": it["qty"], "price": prod["price"]})
+@router.post("/create")
+async def create_order(user: dict = Depends(get_current_user)):
+    cart = cart_collection.find_one({"user_id": user["_id"]})
 
-    # check stock & decrement atomically
-    for it in items:
-        pid = ObjectId(it["product_id"])
-        qty = int(it["qty"])
-        res = await db.products.update_one({"_id": pid, "stock": {"$gte": qty}}, {"$inc": {"stock": -qty}})
-        if res.modified_count == 0:
-            raise HTTPException(400, f"Not enough stock for product {it['product_id']}")
+    if not cart or not cart.get("items"):
+        raise HTTPException(status_code=400, detail="Cart is empty")
 
-    total = sum(it["qty"] * it["price"] for it in items)
-    order_doc = {
-        "user_id": current_user["_id"],
-        "items": items,
+    total = 0
+    for item in cart["items"]:
+        product = products_collection.find_one({"_id": ObjectId(item["product_id"])})
+        if product:
+            total += product.get("price", 0) * item["quantity"]
+
+    order_data = {
+        "user_id": user["_id"],
+        "items": cart["items"],
         "total": total,
-        "address": payload.address,
-        "payment_method": payload.payment_method,
-        "payment_status": "pending" if payload.payment_method != "cod" else "pending",
-        "order_status": "created",
-        "created_at": datetime.utcnow(),
+        "status": "pending"
     }
-    res = await db.orders.insert_one(order_doc)
-    # clear cart
-    await db.carts.delete_one({"user_id": current_user["_id"]})
-    return {"message": "Order placed", "order_id": str(res.inserted_id)}
 
-@router.get("/", dependencies=[Depends(get_current_user)])
-async def list_orders(current_user=Depends(get_current_user)):
-    # user orders
-    cursor = db.orders.find({"user_id": current_user["_id"]})
-    out = []
-    async for o in cursor:
-        o["_id"] = str(o["_id"])
-        out.append(o)
-    return out
+    result = orders_collection.insert_one(order_data)
 
-# admin endpoints
-@router.get("/admin/all", dependencies=[Depends(admin_required)])
-async def admin_list_all_orders():
-    out = []
-    async for o in db.orders.find().sort("created_at", -1):
-        o["_id"] = str(o["_id"])
-        out.append(o)
-    return out
+    cart_collection.update_one(
+        {"_id": cart["_id"]},
+        {"$set": {"items": []}}
+    )
 
-@router.patch("/admin/{order_id}/status", dependencies=[Depends(admin_required)])
-async def admin_update_status(order_id: str, payload: dict):
-    status = payload.get("status")
-    if not status:
-        raise HTTPException(400, "status required")
-    res = await db.orders.update_one({"_id": ObjectId(order_id)}, {"$set": {"order_status": status}})
-    if res.matched_count == 0:
-        raise HTTPException(404, "Order not found")
-    return {"message": "Order status updated"}
+    return {"message": "Order created", "order_id": str(result.inserted_id)}
+
+@router.get("/")
+async def get_user_orders(user: dict = Depends(get_current_user)):
+    orders = orders_collection.find({"user_id": user["_id"]})
+    return [obj_to_dict(order) for order in orders]
+
+@router.get("/{order_id}")
+async def get_order(order_id: str, user: dict = Depends(get_current_user)):
+    order = orders_collection.find_one({
+        "_id": ObjectId(order_id),
+        "user_id": user["_id"]
+    })
+
+    if not order:
+        raise HTTPException(status_code=404, detail="Order not found")
+
+    return obj_to_dict(order)
