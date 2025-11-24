@@ -1,12 +1,15 @@
 from fastapi import APIRouter, Depends, HTTPException
 from bson import ObjectId
 from typing import List
-from auth import require_admin
+from app.auth import require_admin
 from database import products_col, orders_col, users_col
 from models import ProductIn
 from utils import obj_to_dict
 
-router = APIRouter()
+router = APIRouter(
+    prefix="/admin",
+    tags=["Admin"]
+)
 
 
 # -----------------------------------

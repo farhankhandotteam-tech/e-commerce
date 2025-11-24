@@ -3,6 +3,7 @@ from fastapi import HTTPException
 from jose import jwt, JWTError
 from datetime import datetime, timedelta
 from bson import ObjectId
+from app.auth import require_admin
 
 SECRET_KEY = "yoursecret"
 ALGORITHM = "HS256"
