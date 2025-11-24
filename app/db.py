@@ -4,11 +4,13 @@ import os
 
 load_dotenv()
 
-MONGO_URL = os.getenv("mongodb+srv://commerce:commerce@cluster0.9sufkgb.mongodb.net/")
+MONGO_URL = os.getenv("MONGO_URL")
+DB_NAME = os.getenv("MONGO_DB_NAME")
 
 try:
     client = MongoClient(MONGO_URL)
-    db = client.get_default_database()
+    db = client[DB_NAME]
+    print("MongoDB Connected Successfully")
 except Exception as e:
     print("MongoDB Connection Error:", e)
     db = None
