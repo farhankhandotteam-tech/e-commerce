@@ -1,22 +1,14 @@
-from pymongo import MongoClient
 from dotenv import load_dotenv
 import os
 
-load_dotenv()
+load_dotenv(dotenv_path=os.path.join(os.path.dirname(__file__), "..", ".env"))
 
-MONGO_URL = os.getenv("MONGO_URL")
-DB_NAME = os.getenv("MONGO_DB_NAME")
+MONGO_URI = os.getenv("MONGO_URI")
+if not MONGO_URI:
+    raise Exception("MONGO_URI not found in .env file")
 
-try:
-    client = MongoClient(MONGO_URL)
-    db = client[DB_NAME]
-    print("MongoDB Connected Successfully")
-except Exception as e:
-    print("MongoDB Connection Error:", e)
-    db = None
-
-# Collections
-users_col = db["users"]
+# MongoDB client setup
+from pymongo import MongoClient
+client = MongoClient(MONGO_URI)
+db = client["mydatabase"]
 products_col = db["products"]
-orders_col = db["orders"]
-cart_col = db["cart"]
