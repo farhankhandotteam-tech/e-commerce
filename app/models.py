@@ -1,53 +1,32 @@
-from pydantic import BaseModel, Field, EmailStr
-from typing import List, Optional
+from pymongo import MongoClient
+from dotenv import load_dotenv
+import os
 
+load_dotenv()
 
-class UserCreate(BaseModel):
- name: str
- email: EmailStr
- password: str
+MONGO_URI = os.getenv("mongodb+srv://commerce:commerce@cluster0.9sufkgb.mongodb.net/ecommerce")
 
+client = None
+db = None
 
-class UserOut(BaseModel):
- id: str = Field(...)
- name: str
- email: EmailStr
- role: str
+try:
+    client = MongoClient(MONGO_URI)
+    db = client.get_default_database()
 
-class Token(BaseModel):
- access_token: str
- token_type: str = 'bearer'
+    if db is None:
+        raise Exception("Database not found in URI!")
 
+    print("MongoDB Connected Successfully")
 
-class ProductIn(BaseModel):
- name: str
- description: Optional[str] = ''
- price: float
- stock: int
- category: Optional[str] = None
+except Exception as e:
+    print("MongoDB Connection Error:", e)
 
-class ProductOut(ProductIn):
- id: str
-
-class CartItem(BaseModel):
- product_id: str
- quantity: int = 1
-
-class Cart(BaseModel):
- id: Optional[str]
- user_id: str
- items: List[CartItem] = []
-
-
-class OrderItem(BaseModel):
- product_id: str
- quantity: int
- price: float
-
-
-class Order(BaseModel):
- id: Optional[str]
- user_id: str
- items: List[OrderItem]
- total_amount: float
- status: str = 'pending'
+# Collections
+if db:
+    users_col = db["users"]
+    products_col = db["products"]
+    orders_col = db["orders"]
+else:
+    users_col = None
+    products_col = None
+    orders_col = None
