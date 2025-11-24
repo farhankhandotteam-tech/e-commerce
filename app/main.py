@@ -8,6 +8,7 @@ from jose import jwt, JWTError
 from passlib.context import CryptContext
 from pymongo import MongoClient
 from bson import ObjectId
+from passlib.hash import bcrypt as bcrypt_hash
 import shutil
 import os
 
@@ -26,12 +27,13 @@ ACCESS_TOKEN_EXPIRE_MINUTES = 60
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login")
 
 def hash_password(password: str):
-    password_bytes = password.encode("utf-8")[:72]  # bcrypt max 72 bytes
-    return pwd_context.hash(password_bytes)
+    # truncate manually to 72 bytes
+    truncated_password = password.encode("utf-8")[:72]
+    return bcrypt_hash.hash(truncated_password)
 
 def verify_password(plain_password: str, hashed_password: str):
-    password_bytes = plain_password.encode("utf-8")[:72]  # same truncation
-    return pwd_context.verify(password_bytes, hashed_password)
+    truncated_password = plain_password.encode("utf-8")[:72]
+    return bcrypt_hash.verify(truncated_password, hashed_password)
 
 def create_access_token(data: dict, expires_delta=None):
     to_encode = data.copy()
