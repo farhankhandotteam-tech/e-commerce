@@ -1,27 +1,17 @@
-from bson import ObjectId
 
 
-class PyObjectId(ObjectId):
- @classmethod
- def __get_validators__(cls):
-  yield cls.validate
+from typing import Any
 
+def obj_to_dict(doc: Any) -> dict:
+    if doc is None:
+        return None
 
-@classmethod
-def validate(cls, v):
- if not ObjectId.is_valid(v):
-  raise ValueError('Invalid objectid')
-  return ObjectId(v)
+    doc = dict(doc)
 
+    _id = doc.get("_id")
 
+    if _id is not None:
+        doc["id"] = str(_id)
+        del doc["_id"]   
 
-
-def obj_to_dict(doc: dict) -> dict:
- if doc is None:
-  return None
-doc = dict(doc)
-_id = doc.get('_id')
-if _id is not None:
- doc['id'] = str(_id)
-del doc['_id']
-return doc
+    return doc  

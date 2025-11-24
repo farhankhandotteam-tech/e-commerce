@@ -1,21 +1,20 @@
-import os
-from motor.motor_asyncio import AsyncIOMotorClient
+from pymongo import MongoClient
 from dotenv import load_dotenv
-
+import os
 
 load_dotenv()
-MONGO_URI = os.getenv('MONGO_URI', 'mongodb://localhost:27017')
 
+MONGO_URL = os.getenv("mongodb+srv://commerce:commerce@cluster0.9sufkgb.mongodb.net/")
 
-client = AsyncIOMotorClient(MONGO_URI)
-# Use db name from URI if provided or fallback
 try:
-db = client.get_default_database()
-except Exception:
-db = client['ecommerce_db']
+    client = MongoClient(MONGO_URL)
+    db = client.get_default_database()
+except Exception as e:
+    print("MongoDB Connection Error:", e)
+    db = None
 
-
-users_col = db['users']
-products_col = db['products']
-carts_col = db['carts']
-orders_col = db['orders']
+# Collections
+users_col = db["users"]
+products_col = db["products"]
+orders_col = db["orders"]
+cart_col = db["cart"]
