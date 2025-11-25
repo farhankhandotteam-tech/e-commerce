@@ -22,7 +22,7 @@ def register_user(data: UserRegisterModel):
 
     # Truncate password to 72 bytes
     safe_password = data.password[:72]
-
+    hashed_pass = pwd_context.hash(safe_password)
     try:
         hashed_pass = pwd_context.hash(safe_password)
     except Exception as e:
