@@ -1,9 +1,8 @@
 from pydantic import BaseModel, EmailStr, constr
 
 class UserRegisterModel(BaseModel):
-   class UserRegisterModel(BaseModel):
     name: str
-    email: EmailStr
+    email:EmailStr
     password: constr(max_length=72)   
     user_role: str
 
