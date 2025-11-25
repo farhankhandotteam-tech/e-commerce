@@ -43,11 +43,9 @@ def register_user(data: UserRegisterModel):
 
 
 # ---------------- LOGIN ----------------
-@router.post("/login")
+@app.post("/users/login")
 def login_user(data: UserLogin):
-
-    user = users_collection.find_one({"email": data.email})
-
+    user = users_collection.find_one({"email": data.email.lower()})
     if not user:
         raise HTTPException(status_code=400, detail="Invalid email")
 
@@ -57,11 +55,8 @@ def login_user(data: UserLogin):
     token_data = {
         "email": user["email"],
         "role": user["user_role"],
-        "exp": datetime.utcnow() + timedelta(hours=2)
+        "exp": datetime.utcnow() + timedelta(hours=ACCESS_TOKEN_EXPIRE_HOURS)
     }
-
-    # Convert exp to timestamp
-    token_data["exp"] = int(token_data["exp"].timestamp())
 
     token = jwt.encode(token_data, SECRET_KEY, algorithm=ALGORITHM)
 
@@ -70,3 +65,4 @@ def login_user(data: UserLogin):
         "token": token,
         "user_role": user["user_role"]
     }
+
