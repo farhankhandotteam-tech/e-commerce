@@ -1,5 +1,5 @@
 from fastapi import APIRouter, HTTPException, Depends
-from app.database import products_collection
+from app.database import  products_collection
 from app.dependencies import verify_token, admin_only
 
 router = APIRouter(prefix="/products", tags=["Products"])

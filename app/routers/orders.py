@@ -1,9 +1,8 @@
 from fastapi import APIRouter, Depends, HTTPException
 from bson import ObjectId
-
 from app.schemas.order import OrderCreateModel
 from app.dependencies import get_current_user, admin_only
-from database import orders_col, products_col
+from app.database import orders_collection as orders_col
 
 router = APIRouter()
 
