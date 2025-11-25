@@ -4,7 +4,7 @@ class UserRegisterModel(BaseModel):
    class UserRegisterModel(BaseModel):
     name: str
     email: EmailStr
-    password: constr(max_length=72)   # <= 72 characters
+    password: constr(max_length=72)   
     user_role: str
 
 class UserLogin(BaseModel):
