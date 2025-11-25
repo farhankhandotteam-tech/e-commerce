@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException
 from database import db
 from auth import get_current_user
-from app.database import orders_col, products_col
+from app.database import  cart_collection
 router = APIRouter()
 
 # Add product to cart
