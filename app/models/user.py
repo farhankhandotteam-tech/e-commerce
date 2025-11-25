@@ -1,4 +1,4 @@
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, EmailStr, constr
 
 class UserRegisterModel(BaseModel):
    class UserRegisterModel(BaseModel):
