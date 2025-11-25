@@ -8,6 +8,7 @@ from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 from config import IMAGE_DIR
 from routers import users, products, orders, admin, cart
+ 
 
 app = FastAPI()
 app.include_router(users.router)

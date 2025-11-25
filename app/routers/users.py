@@ -8,6 +8,7 @@ router = APIRouter(prefix="/users", tags=["Users"])
 
 SECRET_KEY = "YOURSECRETKEY123"
 ALGORITHM = "HS256"
+ACCESS_TOKEN_EXPIRE_HOURS = 2 
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
