@@ -4,7 +4,6 @@ from jose import jwt
 from datetime import datetime, timedelta
 from app.database import users_collection
 from app.models.user import UserRegisterModel, UserLogin
-
 router = APIRouter(prefix="/users", tags=["Users"])
 
 SECRET_KEY = "YOURSECRETKEY123"
@@ -22,8 +21,8 @@ def register_user(data: UserRegisterModel):
     if exist:
         raise HTTPException(status_code=400, detail="Email already registered")
 
-    hashed_pass = pwd_context.hash(data.password)
-
+    if len(data.password.encode("utf-8")) > 72:
+     raise HTTPException(status_code=400, detail="Password too long (max 72 characters)")
     user_data = {
         "name": data.name,
         "email": data.email,
