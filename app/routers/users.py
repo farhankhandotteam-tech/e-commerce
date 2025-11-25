@@ -22,11 +22,11 @@ def register_user(data: UserRegisterModel):
 
     # Truncate password to 72 bytes
     safe_password = data.password[:72]
-    hashed_pass = pwd_context.hash(safe_password)
+    
     try:
         hashed_pass = pwd_context.hash(safe_password)
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Password hashing failed: {str(e)}")
+     raise HTTPException(status_code=500, detail=f"Password hashing failed: {str(e)}")
 
     user_data = {
         "name": data.name,
