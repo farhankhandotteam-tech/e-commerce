@@ -23,6 +23,9 @@ def register_user(data: UserRegisterModel):
 
     if len(data.password.encode("utf-8")) > 72:
      raise HTTPException(status_code=400, detail="Password too long (max 72 characters)")
+    
+    hashed_pass = pwd_context.hash(data.password)
+   
     user_data = {
         "name": data.name,
         "email": data.email,
