@@ -10,7 +10,7 @@ from config import IMAGE_DIR
 from routers import users, products, orders, admin, cart
 
 app = FastAPI()
-
+app.include_router(users.router)
 # Create images folder if not exists
 os.makedirs(IMAGE_DIR, exist_ok=True)
 
