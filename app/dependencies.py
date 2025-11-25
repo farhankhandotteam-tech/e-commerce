@@ -1,22 +1,49 @@
-from fastapi import Depends, HTTPException
-from fastapi.security import OAuth2PasswordBearer
-from bson import ObjectId
-from auth import decode_access_token
-from database import users_col
+# app/dependencies.py
+from fastapi import Header, HTTPException, Depends
+from jose import jwt, JWTError
 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login")
+# Secret key and algorithm for JWT
+SECRET_KEY = "your-secret-key"
+ALGORITHM = "HS256"
 
-def get_current_user(token: str = Depends(oauth2_scheme)):
-    payload = decode_access_token(token)
-    if not payload:
-        raise HTTPException(status_code=401, detail="Invalid authentication")
-    user = users_col.find_one({"_id": ObjectId(payload["_id"])})
-    if not user:
-        raise HTTPException(status_code=404, detail="User not found")
-    user["_id"] = str(user["_id"])
+
+# ----------------------------
+# Verify and decode JWT token
+# ----------------------------
+def verify_token(authorization: str = Header(...)):
+    """
+    Verify JWT token from Authorization header.
+    Header must be: "Authorization: Bearer <token>"
+    """
+    if not authorization.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="Invalid token format")
+
+    token = authorization.split(" ")[1]
+
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        return payload
+    except JWTError:
+        raise HTTPException(status_code=401, detail="Invalid or expired token")
+
+
+# ----------------------------
+# Get current logged-in user
+# ----------------------------
+def get_current_user(user: dict = Depends(verify_token)):
+    """
+    Dependency to get current logged-in user
+    """
     return user
 
-def admin_required(user=Depends(get_current_user)):
-    if user["role"] != "admin":
+
+# ----------------------------
+# Admin-only access
+# ----------------------------
+def admin_only(user: dict = Depends(get_current_user)):
+    """
+    Dependency to allow only admins
+    """
+    if user.get("role") != "admin":
         raise HTTPException(status_code=403, detail="Admin access required")
     return user

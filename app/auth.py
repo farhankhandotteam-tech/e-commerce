@@ -1,24 +1,20 @@
-from passlib.hash import bcrypt as bcrypt_hash
-from datetime import datetime, timedelta
+from fastapi import Depends, HTTPException, status
+from fastapi.security import OAuth2PasswordBearer
 from jose import jwt, JWTError
-from config import SECRET_KEY, ALGORITHM, ACCESS_TOKEN_EXPIRE_MINUTES
+from config import SECRET_KEY, ALGORITHM
 
-def hash_password(password: str):
-    truncated_password = password.encode("utf-8")[:72]
-    return bcrypt_hash.hash(truncated_password)
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login")
 
-def verify_password(plain_password: str, hashed_password: str):
-    truncated_password = plain_password.encode("utf-8")[:72]
-    return bcrypt_hash.verify(truncated_password, hashed_password)
-
-def create_access_token(data: dict, expires_delta=None):
-    to_encode = data.copy()
-    expire = datetime.utcnow() + (expires_delta if expires_delta else timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES))
-    to_encode.update({"exp": expire})
-    return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
-
-def decode_access_token(token: str):
+def get_current_user(token: str = Depends(oauth2_scheme)):
     try:
-        return jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        user_id: str = payload.get("user_id")
+        user_role: str = payload.get("user_role")
+
+        if user_id is None:
+            raise HTTPException(status_code=401, detail="Invalid token")
+
+        return {"user_id": user_id, "user_role": user_role}
+
     except JWTError:
-        return None
+        raise HTTPException(status_code=401, detail="Invalid or expired token")

@@ -1,23 +1,66 @@
 from fastapi import APIRouter, HTTPException
-from models.user import UserRegister, UserLogin
-from database import users_col
-from auth import hash_password, verify_password, create_access_token
+from passlib.context import CryptContext
+from jose import jwt
+from datetime import datetime, timedelta
+from app.database import users_collection
+from app.models.user import UserRegisterModel, UserLogin
 
-router = APIRouter()
+router = APIRouter(prefix="/users", tags=["Users"])
 
+SECRET_KEY = "YOURSECRETKEY123"
+ALGORITHM = "HS256"
+
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+
+
+# ---------------- REGISTER ----------------
 @router.post("/register")
-def register(user: UserRegister):
-    if users_col.find_one({"email": user.email}):
-        raise HTTPException(400, "User already exists")
-    user_dict = user.dict()
-    user_dict["password"] = hash_password(user.password)
-    result = users_col.insert_one(user_dict)
-    return {"msg": "User registered", "id": str(result.inserted_id)}
+def register_user(data: UserRegisterModel):
 
+    # Check if user already exists
+    exist = users_collection.find_one({"email": data.email})
+    if exist:
+        raise HTTPException(status_code=400, detail="Email already registered")
+
+    hashed_pass = pwd_context.hash(data.password)
+
+    user_data = {
+        "name": data.name,
+        "email": data.email,
+        "password": hashed_pass,
+        "user_role": data.user_role
+    }
+
+    users_collection.insert_one(user_data)
+
+    return {"message": "User registered successfully"}
+
+
+# ---------------- LOGIN ----------------
 @router.post("/login")
-def login(user: UserLogin):
-    db_user = users_col.find_one({"email": user.email})
-    if not db_user or not verify_password(user.password, db_user["password"]):
-        raise HTTPException(401, "Invalid credentials")
-    token = create_access_token({"_id": str(db_user["_id"]), "role": db_user["role"]})
-    return {"access_token": token, "token_type": "bearer"}
+def login_user(data: UserLogin):
+
+    user = users_collection.find_one({"email": data.email})
+
+    if not user:
+        raise HTTPException(status_code=400, detail="Invalid email")
+
+    if not pwd_context.verify(data.password, user["password"]):
+        raise HTTPException(status_code=400, detail="Invalid password")
+
+    token_data = {
+        "email": user["email"],
+        "role": user["user_role"],
+        "exp": datetime.utcnow() + timedelta(hours=2)
+    }
+
+    # Convert exp to timestamp
+    token_data["exp"] = int(token_data["exp"].timestamp())
+
+    token = jwt.encode(token_data, SECRET_KEY, algorithm=ALGORITHM)
+
+    return {
+        "message": "Login successful",
+        "token": token,
+        "user_role": user["user_role"]
+    }
