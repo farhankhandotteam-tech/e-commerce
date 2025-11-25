@@ -43,7 +43,7 @@ def register_user(data: UserRegisterModel):
 
 
 # ---------------- LOGIN ----------------
-@app.post("/users/login")
+@router.post("/login")
 def login_user(data: UserLogin):
     user = users_collection.find_one({"email": data.email.lower()})
     if not user:
