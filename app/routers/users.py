@@ -16,27 +16,29 @@ pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 @router.post("/register")
 def register_user(data: UserRegisterModel):
     # Check if user already exists
-   exist = users_collection.find_one({"email": data.email})
-   users_collection.insert_one(user_data)
-   if exist:
+    exist = users_collection.find_one({"email": data.email})
+    if exist:
         raise HTTPException(status_code=400, detail="Email already registered")
 
-    # Truncate password to 72 bytes to avoid bcrypt error
-   safe_password = data.password[:72]
+    # Truncate password to 72 bytes
+    safe_password = data.password[:72]
 
-    # Hash password
-   hashed_pass = pwd_context.hash(safe_password)
+    try:
+        hashed_pass = pwd_context.hash(safe_password)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Password hashing failed: {str(e)}")
 
-   user_data = {
+    user_data = {
         "name": data.name,
         "email": data.email,
         "password": hashed_pass,
         "user_role": data.user_role
     }
 
-   users_collection.insert_one(user_data)
+    users_collection.insert_one(user_data)
 
-   return {"message": "User registered successfully"}
+    return {"message": "User registered successfully"}
+
 
 
 
