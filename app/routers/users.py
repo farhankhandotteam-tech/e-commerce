@@ -16,8 +16,8 @@ pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 @router.post("/register")
 def register_user(data: UserRegisterModel):
     # Check if user already exists
-   exist = users_col.find_one({"email": data.email})
-   users_col.insert_one(user_data)
+   exist = users_collection.find_one({"email": data.email})
+   users_collection.insert_one(user_data)
    if exist:
         raise HTTPException(status_code=400, detail="Email already registered")
 
